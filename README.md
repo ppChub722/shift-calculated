@@ -2,7 +2,7 @@
 
 ระบบจัดตารางเวร 24 ชม. แบบรอบต่อเนื่อง เป็นเว็บ static ที่ทำงานในเบราว์เซอร์ทั้งหมด ไม่มี backend
 
-> **สถานะ:** ใช้งานได้ครบ: ตั้งค่า 4 ขั้น บันทึกลง localStorage, solver จัดตารางใน Web Worker, แสดงตารางคน × วัน และ export CSV ยังไม่มี import json และ export json / xlsx
+> **สถานะ:** ใช้งานได้ครบ: ตั้งค่า 4 ขั้น บันทึกลง localStorage, ส่งออก / นำเข้าไฟล์ตั้งค่า (json), solver จัดตารางใน Web Worker, แสดงตารางคน × วัน และ export CSV ยังไม่มี export xlsx
 
 ## เริ่มต้นใช้งาน
 
@@ -181,7 +181,7 @@ Vite + React + TypeScript build เป็น static แล้ว deploy บน G
 
 - **Import:** json เท่านั้น เป็น config ทั้งก้อน ตรวจด้วย Zod
 - **localStorage:** เก็บแค่ config พร้อม `version` ห่อการอ่านเขียนด้วย try/catch ถ้าตรวจไม่ผ่านให้แจ้งผู้ใช้ ไม่ล้างทิ้งเฉย ๆ
-- **Export json:** `{ config, result }` ซึ่ง import กลับเข้ามาได้
+- **Export json:** ปุ่ม "ส่งออก" บนหัวแอป ได้ไฟล์ `{ config }` ซึ่งปุ่ม "นำเข้า" อ่านกลับได้ (รับ `{ config, result }` ด้วย)
 - **Export csv:** ตารางคน × วัน ใส่ BOM `﻿` ไว้หน้าไฟล์
 - **Export xlsx:** sheet ตารางเวร, sheet สรุป coverage ต่อวันต่อกะ และ sheet shortage (ถ้ามี)
 

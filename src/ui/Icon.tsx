@@ -17,7 +17,7 @@ const PATHS = {
   sparkle:
     'M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6',
   download: 'M12 4v11M7 10l5 5 5-5M5 20h14',
-  rotate: 'M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4',
+  upload: 'M12 20V9M7 14l5-5 5 5M5 4h14',  rotate: 'M4 12a8 8 0 1 0 2.3-5.7M4 4v4h4',
 } as const
 
 export type IconName = keyof typeof PATHS

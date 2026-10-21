@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { defaultConfig } from './domain/defaults'
 import { checkPattern } from './domain/rules'
 import { OFF, type Config } from './domain/types'
 import { downloadText } from './io/download'
+import { configFileName, configJson } from './io/export-json'
+import { parseConfigFile } from './io/import'
 import { EmployeeStep } from './ui/EmployeeStep'
 import { Icon, type IconName } from './ui/Icon'
 import { PatternStep } from './ui/PatternStep'
@@ -54,6 +56,8 @@ function App() {
   const { config, actions, brokenRaw, canSave } = useConfig()
   const solver = useSolver()
   const [step, setStep] = useState(stepFromHash)
+  const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
   const issues = stepIssues(config)
   const current = STEPS[step]
 
@@ -80,20 +84,80 @@ function App() {
             <p>{canSave ? 'บันทึกอัตโนมัติในเครื่องนี้' : 'เบราว์เซอร์นี้บันทึกข้อมูลไม่ได้'}</p>
           </div>
         </div>
-        <button
-          type="button"
-          className="btn btn-ghost btn-sm"
-          onClick={() => {
-            if (window.confirm('ล้างข้อมูลทั้งหมดแล้วเริ่มใหม่?')) {
-              actions.reset(defaultConfig())
-              solver.cancel()
-              goto(0)
+        <div className="header-actions">
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            title="ได้ไฟล์ .json ไว้สำรอง หรือเปิดต่อในเครื่องอื่น"
+            onClick={() => {
+              downloadText(configFileName(config), configJson(config))
+              setNotice({ ok: true, text: 'ส่งออกไฟล์ตั้งค่าแล้ว เก็บไว้สำรอง หรือนำเข้าในเครื่องอื่นได้' })
+            }}
+          >
+            <Icon name="download" size={18} /> ส่งออก
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            title="เปิดไฟล์ .json ที่ส่งออกไว้"
+            onClick={() => fileRef.current?.click()}
+          >
+            <Icon name="upload" size={18} /> นำเข้า
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm btn-danger-text"
+            onClick={() => {
+              if (window.confirm('ล้างข้อมูลทั้งหมดแล้วเริ่มใหม่?')) {
+                actions.reset(defaultConfig())
+                solver.cancel()
+                setNotice(null)
+                goto(0)
+              }
+            }}
+          >
+            <Icon name="rotate" size={18} /> เริ่มใหม่
+          </button>
+        </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".json,application/json"
+          hidden
+          onChange={async (e) => {
+            const file = e.target.files?.[0]
+            e.target.value = ''
+            if (!file) return
+            const r = parseConfigFile(await file.text())
+            if (!r.ok) {
+              setNotice({ ok: false, text: `นำเข้าไม่ได้: ${r.error}` })
+              return
             }
+            if (!window.confirm('แทนที่ข้อมูลปัจจุบันด้วยไฟล์นี้?')) return
+            actions.reset(r.config)
+            solver.cancel()
+            setNotice({
+              ok: true,
+              text: `นำเข้าแล้ว: ${r.config.employees.length} คน, ${r.config.patterns.length} รูปแบบรอบ`,
+            })
           }}
-        >
-          <Icon name="rotate" size={18} /> เริ่มใหม่
-        </button>
+        />
       </header>
+
+      {notice && (
+        <div className={`status notice ${notice.ok ? 'status-ok' : 'status-bad'}`} role="status">
+          <Icon name={notice.ok ? 'check' : 'alert'} />
+          <span>{notice.text}</span>
+          <button
+            type="button"
+            className="notice-close"
+            aria-label="ปิดข้อความ"
+            onClick={() => setNotice(null)}
+          >
+            <Icon name="x" size={18} />
+          </button>
+        </div>
+      )}
 
       {brokenRaw !== null && (
         <div className="banner" role="alert">

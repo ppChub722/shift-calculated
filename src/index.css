@@ -186,6 +186,58 @@ button:disabled {
 .logo-t1 { fill: #ffad86; }
 .logo-t2 { fill: #c9caff; }
 
+/* ---------- header actions: มือถือเป็นแถวเต็มความกว้างใต้ชื่อแอป ---------- */
+.app-header {
+  flex-wrap: wrap;
+}
+
+.header-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: 100%;
+}
+
+.header-actions .btn {
+  padding: 0 8px;
+}
+
+.btn-danger-text {
+  color: var(--danger);
+}
+
+@media (min-width: 720px) {
+  .header-actions {
+    display: flex;
+    width: auto;
+  }
+
+  .header-actions .btn {
+    padding: 0 12px;
+  }
+}
+
+.notice {
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.notice span {
+  flex: 1;
+}
+
+.notice-close {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin: -6px -6px -6px 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+}
+
 /* ---------- step nav ---------- */
 .steps {
   margin: 0 -16px 20px;
