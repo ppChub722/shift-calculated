@@ -1,14 +1,21 @@
 import { addDays, formatThaiShort } from '../domain/dates'
 import { checkPattern } from '../domain/rules'
-import { OFF } from '../domain/types'
+import { OFF, type Config } from '../domain/types'
+import { rosterCsv } from '../io/export-csv'
+import { downloadText } from '../io/download'
+import type { SolveResult } from '../solver/types'
 import { Icon } from './Icon'
+import { RosterTable } from './RosterTable'
+import { ShortageReport } from './ShortageReport'
+import { toneByIndex } from './shiftStyle'
 import type { StepProps } from './useConfig'
+import type { SolverApi } from './useSolver'
 
-type Props = StepProps & { onGoto: (step: number) => void }
+type Props = StepProps & { onGoto: (step: number) => void; solver: SolverApi }
 
 type Check = { ok: boolean; title: string; detail: string; step: number }
 
-export function ReviewStep({ config, onGoto }: Props) {
+export function ReviewStep({ config, onGoto, solver }: Props) {
   const { shifts, patterns, employees } = config
   const ids = shifts.map((s) => s.id)
   const end = addDays(config.startDate, config.days - 1)
@@ -55,7 +62,9 @@ export function ReviewStep({ config, onGoto }: Props) {
       step: 3,
     },
   ]
-  const ready = checks.every((c) => c.ok)
+  // คนน้อยกว่าที่ต้องการยังกดจัดได้ ระบบจะอธิบายว่าขาดตรงไหน
+  const ready = checks[2].ok && employees.length > 0
+  const { state } = solver
 
   return (
     <div className="stack">
@@ -77,15 +86,124 @@ export function ReviewStep({ config, onGoto }: Props) {
       </ul>
 
       <section className="card cta">
-        <button type="button" className="btn btn-primary btn-lg" disabled>
-          <Icon name="sparkle" /> จัดตาราง
-        </button>
-        <p className="muted small">
-          {ready
-            ? 'ข้อมูลพร้อมแล้ว ส่วนคำนวณตารางกำลังพัฒนา เร็ว ๆ นี้'
-            : 'แก้รายการที่มีเครื่องหมายเตือนก่อน แล้วค่อยจัดตาราง'}
-        </p>
+        {state.kind === 'running' ? (
+          <>
+            <p className="running" role="status">
+              <span className="spinner" aria-hidden="true" /> กำลังจัดตาราง…{' '}
+              {(state.ms / 1000).toFixed(1)} วินาที
+            </p>
+            <button type="button" className="btn btn-secondary" onClick={solver.cancel}>
+              ยกเลิก
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              className="btn btn-primary btn-lg"
+              disabled={!ready}
+              onClick={() => solver.run(config)}
+            >
+              <Icon name="sparkle" /> {state.kind === 'done' ? 'จัดตารางใหม่' : 'จัดตาราง'}
+            </button>
+            <p className="muted small">
+              {ready
+                ? `ใช้เวลาคำนวณไม่เกิน ${Math.round(config.solver.timeLimitMs / 1000)} วินาที`
+                : 'แก้รายการที่มีเครื่องหมายเตือนก่อน แล้วค่อยจัดตาราง'}
+            </p>
+          </>
+        )}
       </section>
+
+      {state.kind === 'error' && (
+        <p className="status status-bad" role="alert">
+          <Icon name="alert" /> คำนวณไม่สำเร็จ: {state.message}
+        </p>
+      )}
+
+      {state.kind === 'done' && (
+        <Result
+          config={state.config}
+          result={state.result}
+          stale={state.key !== JSON.stringify(config)}
+        />
+      )}
+    </div>
+  )
+}
+
+function Result({ config, result, stale }: { config: Config; result: SolveResult; stale: boolean }) {
+  const took =
+    result.stats.ms < 1000
+      ? 'ใช้เวลาไม่ถึง 1 วินาที'
+      : `ใช้เวลา ${(result.stats.ms / 1000).toFixed(1)} วินาที`
+  const banner =
+    result.status === 'solved'
+      ? { cls: 'status-ok', icon: 'check' as const, text: `จัดได้ครบทุกกะ ทุกวัน (${took})` }
+      : result.status === 'partial'
+        ? {
+            cls: 'status-warn',
+            icon: 'alert' as const,
+            text: `หมดเวลาก่อนหาแบบที่ครบได้ นี่คือตารางที่ใกล้เคียงที่สุด ขาดหรือเกิน ${result.issues.length} จุด`,
+          }
+        : {
+            cls: 'status-bad',
+            icon: 'alert' as const,
+            text: `จัดให้ครบตามเงื่อนไขไม่ได้ ตารางด้านล่างเป็นแบบที่ใกล้เคียงที่สุด ขาดหรือเกิน ${result.issues.length} จุด`,
+          }
+
+  return (
+    <div className="stack result">
+      <h3 className="result-title">ผลการจัดตาราง</h3>
+      {stale && (
+        <p className="status status-warn">
+          <Icon name="info" /> ข้อมูลถูกแก้หลังจัดตาราง ตารางนี้ยังเป็นของเดิม กด “จัดตารางใหม่” เพื่ออัปเดต
+        </p>
+      )}
+      <p className={`status ${banner.cls}`}>
+        <Icon name={banner.icon} /> {banner.text}
+      </p>
+
+      <ShortageReport config={config} result={result} />
+
+      <div className="legend" aria-label="คำอธิบายสี">
+        {config.shifts.map((s, i) => (
+          <span key={s.id} className="legend-item">
+            <span className={`rc ${toneByIndex(i)}`} aria-hidden="true" /> {s.name}
+          </span>
+        ))}
+        <span className="legend-item">
+          <span className="rc rc-off" aria-hidden="true">
+            ·
+          </span>{' '}
+          หยุด
+        </span>
+        <span className="legend-item">
+          <span className="rc rc-leave" aria-hidden="true">
+            ลา
+          </span>{' '}
+          ลา
+        </span>
+      </div>
+
+      <RosterTable config={config} result={result} />
+      <p className="muted small">เลื่อนตารางไปทางซ้าย–ขวาเพื่อดูวันอื่น แถวล่างคือจำนวนคนต่อกะ (สีแดง = ขาด, สีส้ม = เกิน)</p>
+
+      <div className="export-row">
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={() =>
+            downloadText(
+              `ตารางเวร-${config.startDate}.csv`,
+              rosterCsv(config, result),
+              'text/csv;charset=utf-8',
+            )
+          }
+        >
+          <Icon name="download" /> ดาวน์โหลด CSV (เปิดใน Excel ได้)
+        </button>
+      </div>
     </div>
   )
 }

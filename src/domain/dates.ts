@@ -51,3 +51,21 @@ export function formatThaiLong(iso: IsoDate): string {
 export function formatThaiShort(iso: IsoDate): string {
   return shortFmt.format(toUtc(iso))
 }
+
+const dowFmt = new Intl.DateTimeFormat('th-TH', { weekday: 'narrow', timeZone: 'UTC' })
+const monthFmt = new Intl.DateTimeFormat('th-TH', { month: 'short', timeZone: 'UTC' })
+
+/** "พ", "พฤ", "อา" */
+export function formatWeekday(iso: IsoDate): string {
+  return dowFmt.format(toUtc(iso))
+}
+
+/** "พ.ย." */
+export function formatMonth(iso: IsoDate): string {
+  return monthFmt.format(toUtc(iso))
+}
+
+export function isWeekend(iso: IsoDate): boolean {
+  const dow = new Date(toUtc(iso)).getUTCDay()
+  return dow === 0 || dow === 6
+}

@@ -10,6 +10,7 @@ import { PeriodStep } from './ui/PeriodStep'
 import { ReviewStep } from './ui/ReviewStep'
 import { ShiftStep } from './ui/ShiftStep'
 import { useConfig } from './ui/useConfig'
+import { useSolver } from './ui/useSolver'
 
 type Step = { title: string; lead: string; icon: IconName }
 
@@ -51,6 +52,7 @@ function stepFromHash(): number {
 
 function App() {
   const { config, actions, brokenRaw, canSave } = useConfig()
+  const solver = useSolver()
   const [step, setStep] = useState(stepFromHash)
   const issues = stepIssues(config)
   const current = STEPS[step]
@@ -84,6 +86,7 @@ function App() {
           onClick={() => {
             if (window.confirm('ล้างข้อมูลทั้งหมดแล้วเริ่มใหม่?')) {
               actions.reset(defaultConfig())
+              solver.cancel()
               goto(0)
             }
           }}
@@ -155,7 +158,7 @@ function App() {
         {step === 1 && <ShiftStep {...props} />}
         {step === 2 && <PatternStep {...props} />}
         {step === 3 && <EmployeeStep {...props} />}
-        {step === 4 && <ReviewStep {...props} onGoto={goto} />}
+        {step === 4 && <ReviewStep {...props} onGoto={goto} solver={solver} />}
       </main>
 
       <div className="step-nav">
