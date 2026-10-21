@@ -14,7 +14,7 @@ import { useConfig } from './ui/useConfig'
 type Step = { title: string; lead: string; icon: IconName }
 
 const STEPS: Step[] = [
-  { title: 'ช่วงเวลา', lead: 'เลือกวันเริ่มและความยาวของตาราง', icon: 'calendar' },
+  { title: 'ช่วงเวลา', lead: 'เลือกวันเริ่มและวันสิ้นสุดของตาราง', icon: 'calendar' },
   {
     title: 'กะทำงาน',
     lead: 'กะในหนึ่งวัน เรียงตามเวลา พร้อมจำนวนคนที่ต้องการในแต่ละกะ',

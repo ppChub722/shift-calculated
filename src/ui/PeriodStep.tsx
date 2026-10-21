@@ -1,4 +1,4 @@
-import { addDays, formatThaiLong } from '../domain/dates'
+import { addDays, dayIndex, formatThaiLong } from '../domain/dates'
 import { Icon } from './Icon'
 import type { StepProps } from './useConfig'
 
@@ -11,22 +11,40 @@ export function PeriodStep({ config, actions }: StepProps) {
   return (
     <div className="stack">
       <section className="card stack">
-        <div className="field">
-          <label htmlFor="start-date">วันเริ่มตาราง</label>
-          <input
-            id="start-date"
-            type="date"
-            className="input"
-            value={config.startDate}
-            onChange={(e) =>
-              e.target.value && actions.setPeriod({ startDate: e.target.value })
-            }
-          />
+        <div className="date-range">
+          <div className="field">
+            <label htmlFor="start-date">วันเริ่มตาราง</label>
+            <input
+              id="start-date"
+              type="date"
+              className="input"
+              value={config.startDate}
+              onChange={(e) =>
+                e.target.value && actions.setPeriod({ startDate: e.target.value })
+              }
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="end-date">วันสิ้นสุด</label>
+            <input
+              id="end-date"
+              type="date"
+              className="input"
+              min={config.startDate}
+              max={addDays(config.startDate, MAX_DAYS - 1)}
+              value={end}
+              onChange={(e) => {
+                if (!e.target.value) return
+                const n = dayIndex(config.startDate, e.target.value) + 1
+                if (n >= 1 && n <= MAX_DAYS) actions.setPeriod({ days: n })
+              }}
+            />
+          </div>
         </div>
 
         <div className="field">
           <span className="label" id="days-label">
-            จัดตารางกี่วัน
+            หรือเลือกจำนวนวัน
           </span>
           <div className="chip-group" role="group" aria-labelledby="days-label">
             {DAY_PRESETS.map((n) => (

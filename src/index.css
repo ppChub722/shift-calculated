@@ -578,6 +578,17 @@ select.input {
   font-weight: 600;
 }
 
+.date-range {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 520px) {
+  .date-range {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .chip-group {
   display: flex;
   flex-wrap: wrap;
