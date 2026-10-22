@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { rotationSeq, singleShiftSeq } from '../domain/defaults'
-import { checkPattern, MIN_SLOT_GAP, type PatternIssue } from '../domain/rules'
+import { checkPattern, type PatternIssue } from '../domain/rules'
 import { OFF, type Pattern, type Shift } from '../domain/types'
 import { Icon } from './Icon'
 import { NumberStepper } from './NumberStepper'
@@ -9,17 +9,22 @@ import type { StepProps } from './useConfig'
 
 const MAX_LENGTH = 28
 
-function issueText(issue: PatternIssue, seq: string[], shifts: Shift[]): string {
+function issueText(
+  issue: PatternIssue,
+  seq: string[],
+  shifts: Shift[],
+  restShifts: number,
+): string {
   if (issue.kind === 'unknown-shift') {
     return `วันที่ ${issue.day + 1} ใช้กะที่ถูกลบไปแล้ว`
   }
   const a = shiftLabel(shifts, seq[issue.from])
   const b = shiftLabel(shifts, seq[issue.to])
-  const gap = MIN_SLOT_GAP - 1
+  const rule = `ต้องเว้นอย่างน้อย ${restShifts} กะ (เปลี่ยนกฎพักได้ที่ขั้น “กะทำงาน”)`
   if (issue.wraps) {
-    return `กะ${a}วันสุดท้าย (วันที่ ${issue.from + 1}) วนกลับไปกะ${b}วันที่ ${issue.to + 1} ของรอบถัดไปเร็วเกินไป ต้องเว้นอย่างน้อย ${gap} กะ ลองเพิ่มวันหยุดท้ายรอบ`
+    return `กะ${a}วันสุดท้าย (วันที่ ${issue.from + 1}) วนกลับไปกะ${b}วันที่ ${issue.to + 1} ของรอบถัดไปเร็วเกินไป ลองเพิ่มวันหยุดท้ายรอบ ${rule}`
   }
-  return `กะ${a}วันที่ ${issue.from + 1} ต่อด้วยกะ${b}วันที่ ${issue.to + 1} เร็วเกินไป ต้องเว้นอย่างน้อย ${gap} กะ`
+  return `กะ${a}วันที่ ${issue.from + 1} ต่อด้วยกะ${b}วันที่ ${issue.to + 1} เร็วเกินไป ${rule}`
 }
 
 function presets(shifts: Shift[]): { name: string; seq: string[] }[] {
@@ -45,6 +50,7 @@ export function PatternStep({ config, actions }: StepProps) {
           key={p.id}
           pattern={p}
           shifts={shifts}
+          restShifts={config.rules.restShifts}
           onChange={(patch) => actions.updatePattern(p.id, patch)}
           onRemove={() => {
             if (window.confirm(`ลบรูปแบบ "${p.name}"?`)) actions.removePattern(p.id)
@@ -82,16 +88,17 @@ export function PatternStep({ config, actions }: StepProps) {
 type CardProps = {
   pattern: Pattern
   shifts: Shift[]
+  restShifts: number
   onChange: (patch: Partial<Pattern>) => void
   onRemove: () => void
 }
 
-function PatternCard({ pattern, shifts, onChange, onRemove }: CardProps) {
+function PatternCard({ pattern, shifts, restShifts, onChange, onRemove }: CardProps) {
   const { seq } = pattern
   const [picked, setPicked] = useState<string>(shifts[0]?.id ?? OFF)
   const brush = picked === OFF || shifts.some((s) => s.id === picked) ? picked : OFF
   const brushes = [...shifts.map((s) => s.id), OFF]
-  const issue = checkPattern(seq, shifts.map((s) => s.id))
+  const issue = checkPattern(seq, shifts.map((s) => s.id), restShifts)
   const work = seq.filter((x) => x !== OFF).length
   const bad = new Set<number>(
     issue === null ? [] : issue.kind === 'rest' ? [issue.from, issue.to] : [issue.day],
@@ -171,7 +178,7 @@ function PatternCard({ pattern, shifts, onChange, onRemove }: CardProps) {
 
       {issue ? (
         <p className="status status-bad">
-          <Icon name="alert" /> {issueText(issue, seq, shifts)}
+          <Icon name="alert" /> {issueText(issue, seq, shifts, restShifts)}
         </p>
       ) : work === 0 ? (
         <p className="status status-warn">

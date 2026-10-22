@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { DEFAULT_REST_SHIFTS } from './rules'
 import type { Config } from './types'
 
 const isoDate = z.iso.date()
@@ -33,5 +34,9 @@ export const configSchema: z.ZodType<Config> = z.object({
   shifts: z.array(shiftSchema).min(1),
   patterns: z.array(patternSchema).min(1),
   employees: z.array(employeeSchema),
+  // ข้อมูลเก่าที่ยังไม่มีฟิลด์นี้ ใช้กฎเดิม (เว้น 2 กะ)
+  rules: z
+    .object({ restShifts: z.number().int().nonnegative() })
+    .default({ restShifts: DEFAULT_REST_SHIFTS }),
   solver: z.object({ timeLimitMs: z.number().int().positive() }),
 })

@@ -21,7 +21,9 @@ export function ReviewStep({ config, onGoto, solver }: Props) {
   const end = addDays(config.startDate, config.days - 1)
   const sumMin = shifts.reduce((n, s) => n + s.min, 0)
   const badPatterns = patterns.filter(
-    (p) => checkPattern(p.seq, ids) !== null || p.seq.every((x) => x === OFF),
+    (p) =>
+      checkPattern(p.seq, ids, config.rules.restShifts) !== null ||
+      p.seq.every((x) => x === OFF),
   ).length
   const leaves = employees.reduce((n, e) => n + e.leaves.length, 0)
   const blocked = employees.reduce((n, e) => n + e.blocked.length, 0)

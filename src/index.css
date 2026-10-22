@@ -656,6 +656,28 @@ select.input {
   font-weight: 500;
 }
 
+.stack-sm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rest-explain {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: 15px;
+}
+
+.rest-explain .icon {
+  margin-top: 3px;
+  color: var(--accent);
+}
+
+.chip[aria-checked='true'],
 .chip[aria-pressed='true'] {
   border-color: var(--accent);
   background: var(--accent);

@@ -24,5 +24,7 @@ export type Config = {
   shifts: Shift[]
   patterns: Pattern[]
   employees: Employee[]
+  /** restShifts = จำนวนกะที่ต้องเว้นระหว่างสองกะที่ทำ (0 = ไม่จำกัด นอกจากวันละกะเดียว) */
+  rules: { restShifts: number }
   solver: { timeLimitMs: number }
 }

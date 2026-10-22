@@ -1,4 +1,5 @@
 import { todayIso } from './dates'
+import { DEFAULT_REST_SHIFTS } from './rules'
 import { OFF, type Config, type Employee, type Shift } from './types'
 
 export function defaultShifts(): Shift[] {
@@ -37,6 +38,7 @@ export function defaultConfig(): Config {
       },
     ],
     employees: [],
+    rules: { restShifts: DEFAULT_REST_SHIFTS },
     solver: { timeLimitMs: 10_000 },
   }
 }

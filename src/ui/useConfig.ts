@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { defaultConfig } from '../domain/defaults'
+import { maxRestShifts } from '../domain/rules'
 import {
   OFF,
   type Config,
@@ -56,10 +57,20 @@ export function useConfig() {
       updateShift(id: string, patch: Partial<Shift>) {
         update((c) => ({ ...c, shifts: patchById(c.shifts, id, patch) }))
       },
-      /** ช่องใน pattern ที่ใช้กะนี้กลายเป็นวันหยุด ข้อห้ามของกะนี้ถูกลบ */
+      setRestShifts(restShifts: number) {
+        update((c) => ({ ...c, rules: { ...c.rules, restShifts } }))
+      },
+      /**
+       * ช่องใน pattern ที่ใช้กะนี้กลายเป็นวันหยุด ข้อห้ามของกะนี้ถูกลบ
+       * กฎพักลดลงให้ไม่เกินที่จำนวนกะใหม่รับได้
+       */
       removeShift(id: string) {
         update((c) => ({
           ...c,
+          rules: {
+            ...c.rules,
+            restShifts: Math.min(c.rules.restShifts, maxRestShifts(c.shifts.length - 1)),
+          },
           shifts: c.shifts.filter((s) => s.id !== id),
           patterns: c.patterns.map((p) => ({
             ...p,

@@ -14,7 +14,9 @@ export function buildProblem(config: Config): Problem {
 
   // pattern ที่ผิดกฎหรือไม่มีวันทำงานเลย ไม่เอามาใช้
   const patterns = config.patterns.filter(
-    (p) => p.seq.some((x) => x !== OFF) && checkPattern(p.seq, shiftIds) === null,
+    (p) =>
+      p.seq.some((x) => x !== OFF) &&
+      checkPattern(p.seq, shiftIds, config.rules.restShifts) === null,
   )
 
   const candidates: Candidate[][] = []

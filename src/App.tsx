@@ -41,7 +41,9 @@ function stepIssues(config: Config): boolean[] {
   const badPattern =
     config.patterns.length === 0 ||
     config.patterns.some(
-      (p) => checkPattern(p.seq, ids) !== null || p.seq.every((x) => x === OFF),
+      (p) =>
+        checkPattern(p.seq, ids, config.rules.restShifts) !== null ||
+        p.seq.every((x) => x === OFF),
     )
   return [false, false, badPattern, config.employees.length === 0, false]
 }

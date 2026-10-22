@@ -14,6 +14,12 @@ describe('parseConfigFile', () => {
     expect(parseConfigFile('﻿' + JSON.stringify(config))).toEqual({ ok: true, config })
   })
 
+  it('ไฟล์เก่าที่ยังไม่มีกฎพัก ใช้ค่าเดิม เว้น 2 กะ', () => {
+    const { rules: _rules, ...old } = defaultConfig()
+    const r = parseConfigFile(JSON.stringify({ config: old }))
+    expect(r.ok && r.config.rules).toEqual({ restShifts: 2 })
+  })
+
   it('ปฏิเสธไฟล์ที่ไม่ใช่ JSON', () => {
     expect(parseConfigFile('ชื่อ,วันที่')).toMatchObject({ ok: false })
   })

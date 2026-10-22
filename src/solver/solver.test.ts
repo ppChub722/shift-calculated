@@ -22,6 +22,7 @@ function makeConfig(people: number, patterns: string[], patch: Partial<Config> =
       leaves: [],
       blocked: [],
     })),
+    rules: { restShifts: 2 },
     solver: { timeLimitMs: 5000 },
     ...patch,
   }
@@ -106,6 +107,25 @@ describe('solve', () => {
     config.employees[0].blocked = [{ shiftId: 'ด', from: '2026-11-01', to: '2026-11-30' }]
     const r = solve(config)
     expect(r.reasons).toContainEqual({ kind: 'no-candidate', employeeId: 'e0' })
+  })
+
+  it('2 กะต่อวัน เว้น 1 กะ: ใช้ pattern ที่ทำกะเดิมติดกันได้', () => {
+    const config = makeConfig(4, ['ช ช ด ด OFF OFF'], {
+      shifts: [
+        { id: 'ช', name: 'กลางวัน', min: 1, max: 2 },
+        { id: 'ด', name: 'กลางคืน', min: 1, max: 2 },
+      ],
+      rules: { restShifts: 1 },
+    })
+    const r = solve(config)
+    expect(r.status).toBe('solved')
+    expectAllCovered(config, r)
+  })
+
+  it('pattern ที่ผิดกฎพักไม่ถูกเอามาใช้', () => {
+    // ดึกต่อเช้า ผิดกฎเว้น 2 กะ → ไม่มีตัวเลือกเลย ทุกคนถูกรายงาน
+    const r = solve(makeConfig(3, ['ด ช OFF']))
+    expect(r.reasons.filter((x) => x.kind === 'no-candidate')).toHaveLength(3)
   })
 
   it('คนเกิน: ฟ้อง ไม่แอบให้หยุดเพิ่ม', () => {

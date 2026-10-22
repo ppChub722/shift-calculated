@@ -1,4 +1,4 @@
-import { MIN_SLOT_GAP } from '../domain/rules'
+import { forbiddenNextDay, maxRestShifts } from '../domain/rules'
 import type { Shift } from '../domain/types'
 import { Icon } from './Icon'
 import { NumberStepper } from './NumberStepper'
@@ -92,12 +92,73 @@ export function ShiftStep({ config, actions }: StepProps) {
           <strong>
             ทั้งวันต้องการ {sumMin === sumMax ? sumMin : `${sumMin}–${sumMax}`} คน
           </strong>
-          <p>
-            กะเรียงตามเวลาในหนึ่งวัน ระบบใช้ลำดับนี้ตรวจว่าได้พักพอ
-            คือทำหนึ่งกะแล้วต้องเว้นอย่างน้อย {MIN_SLOT_GAP - 1} กะ
-          </p>
+          <p>กะเรียงตามเวลาในหนึ่งวัน ระบบใช้ลำดับนี้ตรวจกฎการพักด้านล่าง</p>
         </div>
       </section>
+
+      <RestRule
+        shifts={shifts}
+        restShifts={config.rules.restShifts}
+        onChange={actions.setRestShifts}
+      />
     </div>
+  )
+}
+
+function RestRule({
+  shifts,
+  restShifts,
+  onChange,
+}: {
+  shifts: Shift[]
+  restShifts: number
+  onChange: (r: number) => void
+}) {
+  const S = shifts.length
+  const top = maxRestShifts(S)
+  const current = Math.min(restShifts, top)
+  const pairs = forbiddenNextDay(S, current)
+  const name = (i: number) => shifts[i]?.name ?? '?'
+
+  return (
+    <section className="card stack-sm">
+      <h3 className="card-title">กฎการพัก</h3>
+      {S === 1 ? (
+        <p className="muted small">มีกะเดียวต่อวัน ทำได้วันละกะอยู่แล้ว ไม่ต้องตั้งกฎพัก</p>
+      ) : (
+        <>
+          <p className="muted small">
+            ทำกะหนึ่งแล้ว ต้องเว้นกี่กะก่อนเข้ากะถัดไป (ทุกแบบทำได้วันละกะเดียว)
+          </p>
+          <div className="chip-group" role="radiogroup" aria-label="กฎการพัก">
+            {Array.from({ length: top + 1 }, (_, r) => (
+              <button
+                key={r}
+                type="button"
+                role="radio"
+                aria-checked={current === r}
+                className="chip"
+                onClick={() => onChange(r)}
+              >
+                {r === 0 ? 'ไม่จำกัด' : `เว้น ${r} กะ`}
+              </button>
+            ))}
+          </div>
+          <p className="rest-explain">
+            {pairs.length === 0 ? (
+              <>
+                <Icon name="info" size={18} /> ไม่มีข้อห้าม เช่น ทำกะ{name(S - 1)}แล้วต่อกะ
+                {name(0)}วันรุ่งขึ้นได้
+              </>
+            ) : (
+              <>
+                <Icon name="info" size={18} /> ห้ามต่อกันวันรุ่งขึ้น:{' '}
+                {pairs.map(([a, b]) => `${name(a)} → ${name(b)}`).join(', ')}
+              </>
+            )}
+          </p>
+        </>
+      )}
+    </section>
   )
 }
